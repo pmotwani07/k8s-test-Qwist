@@ -37,4 +37,104 @@ This repository provides a complete reference implementation that:
 - `.github/workflows/ci-cd.yml` — CI/CD
 - `argocd/testapp-application.yaml` — Argo CD Application manifest
 
-See per-folder README-like comments for specifics.
+
+# Argo CD Setup Guide
+
+This guide documents the **manual steps** required to set up Argo CD on the EKS cluster and deploy workloads using GitOps.  
+All other infrastructure provisioning (EKS cluster, VPC, node groups) is automated via Terraform.
+
+---
+
+## 1. Configure `kubectl` for EKS
+
+After Terraform creates the cluster, update your local kubeconfig:
+
+bash
+
+aws eks update-kubeconfig --region <AWS_REGION> --name <CLUSTER_NAME>
+
+In our case
+
+aws eks update-kubeconfig --region eu-central-1 --name eks-cluster
+
+Verify the Connection
+
+kubectl get nodes
+
+
+You should see the nodes created by EKS Auto Mode.
+
+## 2 Install Argo CD
+
+Create the argocd namespace:
+
+kubectl create namespace argocd
+
+Install Argo CD components:
+
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+
+## 3. Expose the Argo CD API Server
+
+Setup argocd-server service to use a LoadBalancer:
+
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
+
+Wait a few minutes and get the external URL:
+
+kubectl get svc argocd-server -n argocd
+
+Copy the EXTERNAL-IP value — this is the Argo CD UI endpoint.
+
+## 4. Retrieve Initial Admin Password
+
+kubectl get secret argocd-initial-admin-secret -n argocd \
+  -o jsonpath="{.data.password}" | base64 --decode && echo
+
+## 5. Access the Argo CD UI
+
+  Open the LoadBalancer URL in your browser (HTTPS).
+  Log in with:
+
+  Username: admin
+
+  Password: (from step 4)
+
+  ⚠️ You may see a browser security warning due to the self-signed certificate.
+  It is safe to continue for now, but a proper TLS cert can be configured later.
+
+## 6. Deploy Applications
+
+Create an Argo CD Application manifest to point to your Helm chart repository.
+For example, to deploy the charts/testapp chart:
+
+```
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: testapp
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: "https://github.com/pmotwani07/k8s-test-Qwist"
+    targetRevision: HEAD
+    path: charts/testapp
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: testapp
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+```
+
+Apply the manifest:
+
+kubectl apply -f testapp-application.yaml
+
+
+Your application will automatically sync and deploy into the testapp namespace.

@@ -1,47 +1,40 @@
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 4.0"
+  version = "6.0.1"
 
   name = "tech-challenge-vpc"
   cidr = var.vpc_cidr
 
-  azs             = ["eu-central-1a","eu-central-1b","eu-central-1c"]
-  public_subnets  = ["10.0.1.0/24","10.0.2.0/24","10.0.3.0/24"]
-  private_subnets = ["10.0.11.0/24","10.0.12.0/24","10.0.13.0/24"]
+  enable_nat_gateway = true
+  enable_vpn_gateway = true
+  single_nat_gateway = false
+
+  azs             = ["eu-central-1a", "eu-central-1b", "eu-central-1c"]
+  public_subnets  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  private_subnets = ["10.0.11.0/24", "10.0.12.0/24", "10.0.13.0/24"]
 }
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 22.0"
+  version = "~> 21.0"
 
-  cluster_name    = var.cluster_name
-  cluster_version = "1.27"
+  name               = "eks-cluster"
+  kubernetes_version = "1.33"
 
-  subnets = module.vpc.private_subnets
+  endpoint_public_access = true
 
-  node_groups = {
-    ng1 = {
-      desired_capacity = 2
-      max_capacity     = 3
-      min_capacity     = 1
+  # Optional: Adds the current caller identity as an administrator via cluster access entry
+  enable_cluster_creator_admin_permissions = true
 
-      instance_types = ["t3.medium"]
-    }
+  compute_config = {
+    enabled    = true
+    node_pools = ["general-purpose"]
   }
-
   tags = {
-    Project = "tech-challenge"
+    Environment = "dev"
+    Terraform   = "true"
   }
-}
 
-output "cluster_endpoint" {
-  value = module.eks.cluster_endpoint
-}
-
-output "kubeconfig_certificate_authority_data" {
-  value = module.eks.cluster_certificate_authority_data
-}
-
-output "cluster_name" {
-  value = module.eks.cluster_id
+  subnet_ids = module.vpc.private_subnets
+  vpc_id     = module.vpc.vpc_id
 }

@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "cluster_name" {
   description = "EKS cluster name"
   type        = string
-  default     = "tech-challenge-cluster"
+  default     = "eks-cluster"
 }
 
 variable "vpc_cidr" {
