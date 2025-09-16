@@ -1,7 +1,7 @@
 replicaCount: 1
 image:
   repository: pmotwani575/hello-test-app
-  tag: latest
+  tag: d177a39f78ce9995dc0b34b603e1e229cc19ddc4
 service:
   type: ClusterIP
   port: 8080
