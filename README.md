@@ -138,3 +138,13 @@ kubectl apply -f testapp-application.yaml
 
 
 Your application will automatically sync and deploy into the testapp namespace.
+
+## Add Nginx Ingress controller on k8s cluster_id
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+# Install in its own namespace
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx \
+  --create-namespace \
+  --set controller.service.type=LoadBalancer
