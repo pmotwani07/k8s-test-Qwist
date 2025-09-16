@@ -1,0 +1,72 @@
+# -------------------------------
+# OS / Editor files
+# -------------------------------
+*.swp
+*.swo
+*.DS_Store
+.vscode/
+.idea/
+*.log
+
+# -------------------------------
+# Python / Flask
+# -------------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+*.egg-info/
+
+# -------------------------------
+# Docker
+# -------------------------------
+*.env
+docker-compose.override.yml
+*.tar
+
+# -------------------------------
+# Terraform
+# -------------------------------
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
+# -------------------------------
+# Helm / Charts
+# -------------------------------
+charts/**/charts/
+charts/**/tmp/
+charts/**/values-*.yaml
+
+# -------------------------------
+# GitHub Actions / CI
+# -------------------------------
+.github/workflows/*.yml
+
+# -------------------------------
+# Others / Misc
+# -------------------------------
+*.bak
+*.old
+*.backup
+
+# -------------------------------
+# Keep only what you want tracked
+# -------------------------------
+# Allow tracked files (like Terraform main.tf, values.yaml, README.md)
+!terraform/aws/*.tf
+!terraform/aws/outputs.tf
+!terraform/aws/provider.tf
+!terraform/aws/variables.tf
+!terraform/aws/versions.tf
+!testapp/values.yaml
+!README.md
+!argocd/testapp-application.yaml
