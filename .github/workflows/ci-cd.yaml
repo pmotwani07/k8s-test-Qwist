@@ -66,3 +66,4 @@ jobs:
           else
             git commit -m "ci: update image to $IMAGE_TAG [skip ci]"
             git push origin HEAD:${{ github.ref_name }}
+          fi
