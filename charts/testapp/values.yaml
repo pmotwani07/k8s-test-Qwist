@@ -1,7 +1,7 @@
 replicaCount: 1
 image:
   repository: pmotwani575/hello-test-app
-  tag: 6d5c42bdfd69a1197eb7ad34745183fe58f65215
+  tag: 91a098e670490ae2b54c45471882c5b8e3888d9e
 service:
   type: ClusterIP
   port: 8080
@@ -14,7 +14,6 @@ ingress:
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
     service.beta.kubernetes.io/aws-load-balancer-internal: "false"
     service.beta.kubernetes.io/aws-load-balancer-subnets: "subnet-0965e6243329b72d7,subnet-064c4d4e8dec85455,subnet-0c291df0a8dd5de11"
-
 autoscaling:
   enabled: true
   minReplicas: 1
