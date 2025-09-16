@@ -1,12 +1,10 @@
 replicaCount: 1
-
 image:
   repository: pmotwani575/hello-test-app
-  tag: d177a39f78ce9995dc0b34b603e1e229cc19ddc4
+  tag: 6d5c42bdfd69a1197eb7ad34745183fe58f65215
 service:
   type: ClusterIP
   port: 8080
-
 ingress:
   enabled: true
   host: testapp.example.com
@@ -15,7 +13,6 @@ ingress:
     kubernetes.io/ingress.class: "nginx"
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
     service.beta.kubernetes.io/aws-load-balancer-internal: "false"
-
 autoscaling:
   enabled: true
   minReplicas: 1
