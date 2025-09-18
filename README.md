@@ -42,7 +42,7 @@ https://kubernetes.github.io/ingress-nginx/deploy/#aws
 2. `terraform init && terraform apply` in `terraform/aws` to create EKS cluster and outputs.
 3. Install `kubectl`, `helm`, and `aws` CLI locally; configure `aws` credentials.
 4. Add `ingress-nginx` and `argocd` separately ( done that manually for now ), steps are mentioned below .
-5. Use GitHub Actions on push to `main` to build/push image to ECR and update Helm values.
+5. Use GitHub Actions on push to `main` to build/push image to Docker Repo and update Helm values.
 6. Argo CD will sync the chart from this repository and deploy the new image tag.
 
 
@@ -51,6 +51,7 @@ https://kubernetes.github.io/ingress-nginx/deploy/#aws
 - `charts/testapp/` — Helm chart including Ingress file also for deploying Ingress object.
 - `.github/workflows/ci-cd.yml` — CI/CD
 - `argocd/testapp-application.yaml` — Argo CD Application manifest
+- Nginx-controller.yaml
 
 
 # Argo CD Setup Guide
