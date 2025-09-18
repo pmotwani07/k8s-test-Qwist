@@ -7,14 +7,10 @@ service:
   port: 8080
 ingress:
   enabled: true
-  host: testapp.example.com
+  host: testapp.k8stestapp.element.in
   path: /
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-    service.beta.kubernetes.io/aws-load-balancer-internal: "false"
-    service.beta.kubernetes.io/aws-load-balancer-subnets: "subnet-0965e6243329b72d7,subnet-064c4d4e8dec85455,subnet-0c291df0a8dd5de11"
-
 autoscaling:
   enabled: true
   minReplicas: 1
