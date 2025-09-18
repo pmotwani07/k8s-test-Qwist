@@ -214,16 +214,41 @@ Once DNS propagation completes, the application will be accessible at testapp.k8
 
 Traffic will be routed through the NGINX reverse proxy via Ingress and NLB, ensuring secure and proper routing of requests.
 
+
 ## Future Improvements
 
-This is for test purposes but if we have to apply the same set of tools for a production use cases or setup where there are multiple services running , here are some of the things we should/ must do .
+This setup is intended for **test purposes**. For production use cases or setups running multiple services, the following enhancements could make the environment **more secure, maintainable, and production-ready**:
 
-If given more time, the following enhancements could make this setup more secure, maintainable, and production-ready:
+- **Docker Security**
+  - Add vulnerability scanning for Docker images.
+  - Sign images in CI/CD pipelines.
+  - Run containers as non-root users wherever possible.
 
-. Docker Security: Add docker image vulnerability scanning , sign images in CI pipelines
-. K8s security:  can be improved by namespaces , RBACs , pod admission controller policies , docker security can be improved by things such as running as Non root user etc.
-. Pipeline Quality: Run tests inside Docker build stage, add cache to speed up CI, and include static analysis/linting.
-. Pipeline Refactoring: Split CI/CD workflow into multiple jobs (build, test, dockerize, deploy) to improve parallelism, clarity, and failure isolation.Add pipeline failures and messaging to teams ,slack or any other chatbots for awareness.
-. Deployment Reliability: Add liveness/readiness probes, configure resource requests/limits, and enable rollback or canary deployments with Argo Rollouts.
-. Oservability: Integrate centralized logging (e.g. ELK,loki) and monitoring dashboards (Prometheus + Grafana).
-. Use apps of apps pattern for multiple apps or cluster.
+- **Kubernetes Security**
+  - Use **namespaces** to isolate workloads.
+  - Implement **RBAC** (Role-Based Access Control) policies.
+  - Use **Pod Admission Controllers** to enforce security best practices.
+
+- **Pipeline Quality**
+  - Run tests during the Docker build stage.
+  - Add caching to speed up CI builds.
+  - Include static analysis and linting in the pipeline.
+
+- **Pipeline Refactoring**
+  - Split the CI/CD workflow into multiple jobs (build, test, dockerize, deploy) to:
+    - Improve parallelism.
+    - Increase clarity.
+    - Isolate failures.
+  - Integrate notifications to teams via Slack or other chat tools on pipeline failures.
+
+- **Deployment Reliability**
+  - Add **liveness** and **readiness probes** for services.
+  - Configure **resource requests and limits** for pods.
+  - Enable **rollbacks** or **canary deployments** using Argo Rollouts.
+
+- **Observability**
+  - Implement centralized logging (e.g., ELK stack, Loki).
+  - Add monitoring dashboards (Prometheus + Grafana).
+
+- **Multi-App / Multi-Cluster Management**
+  - Use the **Apps of Apps pattern** in ArgoCD for managing multiple applications or clusters efficiently.
