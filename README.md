@@ -1,4 +1,11 @@
-# Kubernetes Tech Challenge — AWS + Helm + Argo CD + Terraform + GitHub Actions
+# Kubernetes Tech Challenge
+
+## The setup described below has been done on AWS, but it can also be implemented on GCP or Azure. All objects and services mentioned (except standard tools like Helm, ArgoCD, Git, etc.) are AWS services.
+
+##Components
+
+AWS + Helm + Argo CD + Terraform + GitHub Actions
+
 
 This repository provides a complete reference implementation that:
 
@@ -7,7 +14,7 @@ This repository provides a complete reference implementation that:
 - Uses **Ingress NGINX** as the reverse proxy (installed via Helm)
 - Enables scaling via a **Horizontal Pod Autoscaler (HPA)**
 - Uses **Argo CD** for GitOps and to watch the Helm chart (sync Helm chart from repo)
-- Provides a **GitHub Actions** CI pipeline that builds a container image, pushes to **ECR**, updates the Helm values (image tag) and triggers Argo CD to sync
+- Provides a **GitHub Actions** CI pipeline that builds a container image, pushes to docker repository, updates the Helm values (image tag) and triggers Argo CD to sync
 
 ## What is included
 - `app/` — simple Flask app + Dockerfile
@@ -16,24 +23,32 @@ This repository provides a complete reference implementation that:
 - `.github/workflows/ci-cd.yml` — GitHub Actions workflow for CI/CD
 - `argocd/` — Argo CD Application manifest pointing to `charts/testapp`
 - `Makefile` — helper targets for local testing and Terraform commands
+- .gitignore files
+- nginx-controller.yaml file for deploying nginx ingress controller setup , reference took from official documentation here
+
+https://kubernetes.github.io/ingress-nginx/deploy/#aws
 
 ## Important notes (read before running)
-- **Do not commit sensitive credentials.** Use GitHub Secrets for CI (AWS keys, ECR, Argo CD token, DockerHub if used).
-- Terraform backend is configured to use an S3 bucket — replace `backend.tf` values with your own bucket and region.
-- The ECR setup in CI expects the repository to exist or uses `aws ecr create-repository` in the workflow.
-- The Terraform `eks` module version and AWS provider versions are pinned in `versions.tf`. Update to latest if needed.
+- **Do not commit sensitive credentials.** Use GitHub Secrets for CI (AWS keys, ECR, Argo CD token, DockerHub if used). I have used them securely .
+
+- Terraform backend is configured to use an S3 bucket — replace `backend.tf` values with your own bucket and region.( I have used my own AWS playground account here)
+
+- The Docker Repo setup in CI expects the repository to exist, I have tagged and pushed the image to my own docker repo , you can also use ECR for the purpose .
+
+- The Terraform `eks` module version and AWS provider versions are pinned in `versions.tf`. Update to any other version if in case required. I have used the updated ones already here .
 
 ## Quick flow (high-level)
 1. Create Terraform backend S3 bucket and DynamoDB table for locking (or update `terraform/backend.tf`).
 2. `terraform init && terraform apply` in `terraform/aws` to create EKS cluster and outputs.
 3. Install `kubectl`, `helm`, and `aws` CLI locally; configure `aws` credentials.
-4. Add `ingress-nginx` and `argocd` via Helm or use the provided manifests.
+4. Add `ingress-nginx` and `argocd` separately ( done that manually for now ), steps are mentioned below .
 5. Use GitHub Actions on push to `main` to build/push image to ECR and update Helm values.
 6. Argo CD will sync the chart from this repository and deploy the new image tag.
 
+
 ## Files of interest
 - `terraform/aws/main.tf` — EKS provisioning
-- `charts/testapp/` — Helm chart
+- `charts/testapp/` — Helm chart including Ingress file also for deploying Ingress object.
 - `.github/workflows/ci-cd.yml` — CI/CD
 - `argocd/testapp-application.yaml` — Argo CD Application manifest
 
@@ -45,7 +60,7 @@ All other infrastructure provisioning (EKS cluster, VPC, node groups) is automat
 
 ---
 
-## 1. Configure `kubectl` for EKS
+ 1. Configure `kubectl` for EKS
 
 After Terraform creates the cluster, update your local kubeconfig:
 
@@ -64,7 +79,7 @@ kubectl get nodes
 
 You should see the nodes created by EKS Auto Mode.
 
-## 2 Install Argo CD
+2.  Install Argo CD
 
 Create the argocd namespace:
 
@@ -75,7 +90,7 @@ Install Argo CD components:
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 
-## 3. Expose the Argo CD API Server
+ 3. Expose the Argo CD API Server
 
 Setup argocd-server service to use a LoadBalancer:
 
@@ -87,12 +102,12 @@ kubectl get svc argocd-server -n argocd
 
 Copy the EXTERNAL-IP value — this is the Argo CD UI endpoint.
 
-## 4. Retrieve Initial Admin Password
+ 4. Retrieve Initial Admin Password
 
 kubectl get secret argocd-initial-admin-secret -n argocd \
   -o jsonpath="{.data.password}" | base64 --decode && echo
 
-## 5. Access the Argo CD UI
+ 5. Access the Argo CD UI
 
   Open the LoadBalancer URL in your browser (HTTPS).
   Log in with:
@@ -104,7 +119,7 @@ kubectl get secret argocd-initial-admin-secret -n argocd \
   ⚠️ You may see a browser security warning due to the self-signed certificate.
   It is safe to continue for now, but a proper TLS cert can be configured later.
 
-## 6. Deploy Applications
+ 6. Deploy Applications
 
 Create an Argo CD Application manifest to point to your Helm chart repository.
 For example, to deploy the charts/testapp chart:
@@ -139,12 +154,76 @@ kubectl apply -f testapp-application.yaml
 
 Your application will automatically sync and deploy into the testapp namespace.
 
-## Add Nginx Ingress controller on k8s cluster_id
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo update
+# Nginx Ingress Controller Setup
 
-# Install in its own namespace
-helm install ingress-nginx ingress-nginx/ingress-nginx \
-  --namespace ingress-nginx \
-  --create-namespace \
-  --set controller.service.type=LoadBalancer
+This is the official documentation used for deploy
+
+https://kubernetes.github.io/ingress-nginx/deploy/#aws
+
+1. Download the deploy.yaml file , I have renamed it to nginx-Controller.yaml to make it realistic
+2. Update the placeholders values for certificates and CIDR range ( Please read next section for fetching Certificates value )
+3. Add this annotation service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing" at line 351 so that NLB is external facing
+4. Make sure your AWS Subnets are properly tagged with  Key	kubernetes.io/role/elb and value	1
+5. install with kubectl apply -f nginx-controller.yaml
+6. Check the status with command
+
+```rishaanavni@Pankajs-MacBook-Air charts % kubectl get all -n ingress-nginx
+NAME                                           READY   STATUS    RESTARTS   AGE
+pod/ingress-nginx-controller-b9ccc9854-zdnfn   1/1     Running   0          146m
+
+NAME                                         TYPE           CLUSTER-IP      EXTERNAL-IP                                                                        PORT(S)                      AGE
+service/ingress-nginx-controller             LoadBalancer   172.20.235.45   k8s-ingressn-ingressn-24854de0b1-46db8018397013ac.elb.eu-central-1.amazonaws.com   80:30339/TCP,443:30785/TCP   124m
+service/ingress-nginx-controller-admission   ClusterIP      172.20.39.56    <none>                                                                             443/TCP                      178m
+
+NAME                                       READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/ingress-nginx-controller   1/1     1            1           178m
+
+NAME                                                  DESIRED   CURRENT   READY   AGE
+replicaset.apps/ingress-nginx-controller-5bb8b5db5c   0         0         0       178m
+replicaset.apps/ingress-nginx-controller-b9ccc9854    1         1         1       146m
+```
+7 . You will see something like above under External that is external service type LB has now been created
+
+## AWS Side of Things - manually ( Required for ACM and DNS Name resolution.)
+
+1. Create a Route 53 Hosted Zone
+
+Zone name: k8stestapp.element.in.
+
+2. Create and Validate ACM Certificates
+
+Follow AWS documentation to create the required DNS records for validation.
+
+After validation, verify that the ACM certificate is in the “Issued” state.
+
+Copy ACM ARN
+
+Once validated, copy the ARN of the ACM certificate.
+
+3. Configure NGINX Ingress Controller
+
+Use the ACM ARN from the previous step in the NGINX Ingress setup to enable HTTPS access for your application.
+
+Create a CNAME Record
+
+Create a CNAME record for testapp.k8stestapp.element.in pointing to the NLB (Network Load Balancer) endpoint created in AWS.
+
+4. Verify Application Access
+
+Once DNS propagation completes, the application will be accessible at testapp.k8stestapp.element.in.
+
+Traffic will be routed through the NGINX reverse proxy via Ingress and NLB, ensuring secure and proper routing of requests.
+
+## Future Improvements
+
+This is for test purposes but if we have to apply the same set of tools for a production use cases or setup where there are multiple services running , here are some of the things we should/ must do .
+
+If given more time, the following enhancements could make this setup more secure, maintainable, and production-ready:
+
+. Docker Security: Add docker image vulnerability scanning , sign images in CI pipelines
+. K8s security:  can be improved by namespaces , RBACs , pod admission controller policies , docker security can be improved by things such as running as Non root user etc.
+. Pipeline Quality: Run tests inside Docker build stage, add cache to speed up CI, and include static analysis/linting.
+. Pipeline Refactoring: Split CI/CD workflow into multiple jobs (build, test, dockerize, deploy) to improve parallelism, clarity, and failure isolation.Add pipeline failures and messaging to teams ,slack or any other chatbots for awareness.
+. Deployment Reliability: Add liveness/readiness probes, configure resource requests/limits, and enable rollback or canary deployments with Argo Rollouts.
+. Oservability: Integrate centralized logging (e.g. ELK,loki) and monitoring dashboards (Prometheus + Grafana).
+. Use apps of apps pattern for multiple apps or cluster.
