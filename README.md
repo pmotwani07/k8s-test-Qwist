@@ -104,8 +104,9 @@ Copy the EXTERNAL-IP value — this is the Argo CD UI endpoint.
 
  4. Retrieve Initial Admin Password
 
-kubectl get secret argocd-initial-admin-secret -n argocd \
-  -o jsonpath="{.data.password}" | base64 --decode && echo
+```kubectl get secret argocd-initial-admin-secret -n argocd
+-o jsonpath="{.data.password}" | base64 --decode && echo
+```
 
  5. Access the Argo CD UI
 
